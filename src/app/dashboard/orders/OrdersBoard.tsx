@@ -9,7 +9,7 @@ const COLUMNS: { status: OrderStatus; title: string }[] = [
   { status: 'new', title: '🆕 New' },
   { status: 'preparing', title: '👩‍🍳 Preparing' },
   { status: 'ready', title: '✅ Ready to serve' },
-  { status: 'served', title: '🍽️ Served' },
+  { status: 'served', title: '🍽️ Served (unpaid)' },
 ];
 const NEXT: Partial<Record<OrderStatus, [OrderStatus, string][]>> = {
   new: [['preparing', 'Start'], ['cancelled', 'Cancel']],
@@ -113,7 +113,8 @@ export default function OrdersBoard({ cafeId, currency }: { cafeId: string; curr
     document.title = n ? `(${n}) Orders · QRave` : 'Orders · QRave';
   }, [newCount, requests.length]);
 
-  const servedCutoff = Date.now() - 2 * 3600e3;
+  // Served orders stay visible while the table is still eating; they clear once the tab is paid.
+  const openSessionIds = new Set(sessions.map(x => x.id));
 
   return (
     <div>
@@ -150,7 +151,7 @@ export default function OrdersBoard({ cafeId, currency }: { cafeId: string; curr
         <div className="mt-4 grid items-start gap-4 md:grid-cols-2 xl:grid-cols-4">
           {COLUMNS.map(col => {
             const list = orders
-              .filter(o => o.status === col.status && (col.status !== 'served' || new Date(o.updated_at).getTime() > servedCutoff))
+              .filter(o => o.status === col.status && (col.status !== 'served' || openSessionIds.has(o.session_id)))
               .sort((a, b) => (col.status === 'served' ? b.number - a.number : a.number - b.number));
             return (
               <div key={col.status} className="min-h-40 rounded-2xl bg-soft p-3">

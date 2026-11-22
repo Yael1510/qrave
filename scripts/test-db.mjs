@@ -108,7 +108,9 @@ ok((await q(`select available from items where id = $1`, [cake]))[0].available =
 await as(B, () => throws(() => q(`select set_item_available($1, false)`, [cake]), 'Not allowed', 'other cafe cannot toggle stock'));
 await as(B, () => throws(() => q(`select close_session($1)`, [st.session.id]), 'Not allowed', 'other cafe cannot close tab'));
 await as(S, () => q(`select close_session($1)`, [st.session.id]));
-const after = await as(null, async () => (await q(`select table_status('kape-uno',$1) s`, [token]))[0].s);
+const after = await as(null, async () => (await q(`select table_status('kape-uno',$1,$2) s`, [token, st.session.id]))[0].s);
+const stranger = await as(null, async () => (await q(`select table_status('kape-uno',$1) s`, [token]))[0].s);
+ok(stranger.session === null && stranger.orders.length === 0, 'next customer at the table sees a clean menu after payment');
 ok(after.session.status === 'paid' && after.requests.length === 0, 'closing tab marks paid and clears requests');
 const order3 = await as(null, async () => (await q(`select place_order('kape-uno',$1,$2) r`, [token, JSON.stringify([{ item_id: latte, qty: 1 }])]))[0].r);
 const st3 = await as(null, async () => (await q(`select table_status('kape-uno',$1) s`, [token]))[0].s);
