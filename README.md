@@ -60,3 +60,19 @@ Open http://localhost:3000. Sign up, create your cafe, add a category and some i
 - PayMongo monthly subscriptions with a free trial (GCash, Maya, cards)
 - Sales reports (daily/weekly sales, best sellers, busy hours)
 - Super-admin page to manage all cafes
+
+## Continue on another computer
+Your keys are not in git (on purpose), so a fresh clone needs them again:
+
+```bash
+git clone <this repository's URL> qrave
+cd qrave
+npm install
+npm run setup          # paste the Supabase Project URL, publishable key and secret key
+npm run dev            # http://localhost:3000
+```
+
+To deploy from that computer: `npx vercel login`, then `npx vercel link --project qrave` (pick the existing project), then `npx vercel deploy --prod`.
+The live site's keys are already stored in Vercel, so deploys work without copying `.env.local`.
+
+Database changes live in `supabase/migrations/` (0001 → 0003, all already applied to the live project).
