@@ -45,6 +45,8 @@ const strings = {
     scanBody: 'You can browse the menu, but ordering needs your table’s code.',
     options: 'Options',
     status: { new: 'Received', preparing: 'Preparing', ready: 'Ready — on its way', served: 'Served', cancelled: 'Cancelled — please ask staff' },
+    stations: { bar: 'Drinks', kitchen: 'Food' },
+    lineStatus: { new: 'received', preparing: 'preparing', ready: 'ready' },
     errors: {
       INVALID_TABLE: 'This table code isn’t valid any more. Please scan the QR code again.',
       ITEM_UNAVAILABLE: 'Something in your order just sold out. Please review your order.',
@@ -86,6 +88,8 @@ const strings = {
     scanBody: 'Puwede ninyong tingnan ang menu, pero kailangan ang code ng mesa para mag-order.',
     options: 'Mga opsyon',
     status: { new: 'Natanggap', preparing: 'Inihahanda', ready: 'Handa na — papunta na', served: 'Naihain na', cancelled: 'Kinansela — magtanong sa staff' },
+    stations: { bar: 'Inumin', kitchen: 'Pagkain' },
+    lineStatus: { new: 'natanggap', preparing: 'inihahanda', ready: 'handa na' },
     errors: {
       INVALID_TABLE: 'Hindi na valid ang code ng mesang ito. Paki-scan muli ang QR code.',
       ITEM_UNAVAILABLE: 'May naubos sa inyong order. Pakisuri ang inyong order.',

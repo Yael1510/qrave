@@ -11,6 +11,7 @@
    "name": "Hot Drinks",
    "name_fil": "Mainit na Inumin",
    "layout": "list",
+   "station": "bar",
    "items": [
     {
      "name": "Café Latte",
@@ -202,6 +203,7 @@
    "name": "Iced & Blended",
    "name_fil": "Malamig na Inumin",
    "layout": "list",
+   "station": "bar",
    "items": [
     {
      "name": "Iced Spanish Latte",
@@ -344,6 +346,7 @@
    "name": "Bakery",
    "name_fil": "Tinapay at Pastry",
    "layout": "grid",
+   "station": "kitchen",
    "items": [
     {
      "name": "Ensaymada",
@@ -431,6 +434,7 @@
    "name": "All-day Toasts",
    "name_fil": "Toast Buong Araw",
    "layout": "list",
+   "station": "kitchen",
    "items": [
     {
      "name": "Sourdough Toastie",

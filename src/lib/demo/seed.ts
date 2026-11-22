@@ -2,7 +2,7 @@ import 'server-only';
 import { cookies } from 'next/headers';
 import fresco from '../../../supabase/seed/fresco/menu.json';
 import cozycup from '../../../supabase/seed/demo/menu.json';
-import type { Cafe, CafeTable, Category, Item, ItemOption, Member } from '@/lib/types';
+import type { Cafe, CafeTable, Category, Item, ItemOption, ItemStatus, Member, Station } from '@/lib/types';
 import type { DemoDB, DemoOrder } from './store';
 
 // Sample data for the development-only previews (/preview/dashboard, /preview/table/N):
@@ -10,12 +10,13 @@ import type { DemoDB, DemoOrder } from './store';
 // Two sample cafes: Fre&co (default) and Cozy Cup Cafe (set the cookie qrave-demo=cozycup).
 type MenuFile = {
   cafe: { name: string; slug: string; tagline?: string | null; primary_color: string; logo: string };
-  categories: { name: string; name_fil?: string | null; layout: string; items: { name: string; name_fil?: string | null; price: number; description: string; photo?: string; tags: string[]; options: unknown[] }[] }[];
+  categories: { name: string; name_fil?: string | null; layout: string; station?: Station; items: { name: string; name_fil?: string | null; price: number; description: string; photo?: string; tags: string[]; options: unknown[] }[] }[];
 };
 type Variant = {
   id: string; menu: MenuFile; photos: string; tagline: string;
-  // Seeded orders: [table, minutes ago, status, [item name, qty][], note]
-  orders: [number, number, DemoOrder['status'], [string, number][], string | null][];
+  // Seeded orders: [table, minutes ago, status, [item name, qty, line status?][], note]
+  // A line's status defaults to the order's (e.g. drinks already ready while the food is still cooking).
+  orders: [number, number, DemoOrder['status'], [string, number, ItemStatus?][], string | null][];
 };
 
 const VARIANTS: Record<string, Variant> = {
@@ -23,18 +24,18 @@ const VARIANTS: Record<string, Variant> = {
     id: 'demo-cafe', menu: fresco as MenuFile, photos: '/seed/fresco', tagline: 'Friends and coffee',
     orders: [
       [2, 34, 'served', [['Brunch Tapa', 1], ['Americano', 2]], null],
-      [4, 18, 'preparing', [['Crispy Kare-Kare', 1], ['Lychee', 1]], null],
+      [4, 18, 'preparing', [['Crispy Kare-Kare', 1], ['Lychee', 1, 'ready']], null],
       [5, 12, 'ready', [['Creamy Carbonara', 2]], 'One without parmesan, please'],
-      [7, 3, 'new', [['Loaded Nachos', 1], ['Ube Cloud', 2]], null],
+      [7, 3, 'new', [['Latte', 1], ['Loaded Nachos', 1], ['Ube Cloud', 2]], null],
     ],
   },
   cozycup: {
     id: 'demo-cozycup', menu: cozycup as MenuFile, photos: '/seed/demo', tagline: 'Slow coffee. Warm welcome.',
     orders: [
       [2, 34, 'served', [['Americano', 1], ['Ensaymada', 2]], null],
-      [4, 18, 'preparing', [['Oat Flat White', 1], ['Sourdough Toastie', 1]], null],
+      [4, 18, 'preparing', [['Oat Flat White', 1, 'ready'], ['Sourdough Toastie', 1]], null],
       [5, 12, 'ready', [['Iced Ube Latte', 2]], 'One with oat milk, please'],
-      [7, 3, 'new', [['Caramel Frappé', 1], ['Butter Croissant', 2]], null],
+      [7, 3, 'new', [['Café Latte', 1], ['Butter Croissant', 1]], null],
     ],
   },
 };
@@ -48,6 +49,7 @@ function build(v: Variant) {
   };
   const categories: Category[] = menu.categories.map((c, i) => ({
     id: `cat-${i}`, cafe_id: cafeId, name: c.name, name_fil: c.name_fil ?? null, position: i, layout: c.layout as 'list' | 'grid',
+    station: c.station ?? 'kitchen',
   }));
   const items: Item[] = menu.categories.flatMap((c, ci) => c.items.map((x, ii) => ({
     id: `item-${ci}-${ii}`, cafe_id: cafeId, category_id: `cat-${ci}`, position: ii,
@@ -76,7 +78,12 @@ function build(v: Variant) {
     let number = 40;
     const orders: DemoOrder[] = v.orders.map(([table, min, status, lines, note]) => {
       number += 1;
-      const order_items = lines.map(([name, qty], k) => { const it = byName(name); return { id: `oi-${number}-${k}`, name: it.name, unit_price: Number(it.price), qty, options: [] }; });
+      const fromOrder: ItemStatus = status === 'preparing' ? 'preparing' : status === 'ready' || status === 'served' ? 'ready' : 'new';
+      const order_items = lines.map(([name, qty, lineStatus], k) => {
+        const it = byName(name);
+        const station = categories.find(c => c.id === it.category_id)?.station ?? 'kitchen';
+        return { id: `oi-${number}-${k}`, name: it.name, unit_price: Number(it.price), qty, options: [], station, status: lineStatus ?? fromOrder };
+      });
       return {
         id: `order-${number}`, cafe_id: cafeId, table_id: `table-${table}`, session_id: `sess-${table}`, number, status, note,
         total: order_items.reduce((s, l) => s + l.unit_price * l.qty, 0), created_at: ago(min), updated_at: ago(min), order_items,

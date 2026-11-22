@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { money } from '@/lib/format';
 import { TAGS } from '@/lib/i18n';
+import { STATION_ICON, STATION_NAME, guessStation } from '@/lib/stations';
 import type { Cafe, Category, Item } from '@/lib/types';
 import ItemForm from './ItemForm';
 
@@ -22,8 +23,12 @@ export default function MenuEditor({ cafe, initialCategories, initialItems }: {
   async function addCategory(e: React.FormEvent) {
     e.preventDefault();
     if (!newCat.trim()) return;
-    const { data, error } = await supabase.from('categories')
-      .insert({ cafe_id: cafe.id, name: newCat.trim(), position: categories.length }).select().single();
+    const station = guessStation(newCat);
+    const row = { cafe_id: cafe.id, name: newCat.trim(), position: categories.length };
+    let { data, error } = await supabase.from('categories').insert({ ...row, ...(station === 'bar' ? { station } : {}) }).select().single();
+    if (error && /station/i.test(error.message)) {
+      ({ data, error } = await supabase.from('categories').insert(row).select().single()); // database without stations yet (0005 not run)
+    }
     if (fail(error)) return;
     setCategories([...categories, data as Category]);
     setNewCat('');
@@ -41,6 +46,12 @@ export default function MenuEditor({ cafe, initialCategories, initialItems }: {
     const layout = c.layout === 'grid' ? 'list' : 'grid';
     const { error } = await supabase.from('categories').update({ layout }).eq('id', c.id);
     if (!fail(error)) setCategories(categories.map(x => (x.id === c.id ? { ...x, layout } : x)));
+  }
+
+  async function toggleStation(c: Category) {
+    const station = (c.station ?? 'kitchen') === 'kitchen' ? 'bar' : 'kitchen';
+    const { error } = await supabase.from('categories').update({ station }).eq('id', c.id);
+    if (!fail(error)) setCategories(categories.map(x => (x.id === c.id ? { ...x, station } : x)));
   }
 
   async function deleteCategory(c: Category) {
@@ -123,6 +134,10 @@ export default function MenuEditor({ cafe, initialCategories, initialItems }: {
               <button className="btn-secondary btn-sm" onClick={() => moveCategory(ci, 1)} disabled={ci === categories.length - 1} aria-label="Move down">↓</button>
               <button className="btn-secondary btn-sm" onClick={() => toggleLayout(c)} title="How this section looks on the customer menu">
                 {c.layout === 'grid' ? '▦ Cards' : '☰ List'}
+              </button>
+              <button className="btn-secondary btn-sm" onClick={() => toggleStation(c)}
+                title="Which screen gets this category's orders: drinks at the bar, food in the kitchen. Click to switch.">
+                {STATION_ICON[c.station ?? 'kitchen']} {STATION_NAME[c.station ?? 'kitchen']}
               </button>
               <button className="btn-secondary btn-sm" onClick={() => renameCategory(c)}>Rename</button>
               <button className="btn-secondary btn-sm text-danger" onClick={() => deleteCategory(c)}>Delete</button>

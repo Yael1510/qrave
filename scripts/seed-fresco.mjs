@@ -74,7 +74,7 @@ console.log('✓ Name, logo and colour set');
 // --- menu ---
 let photos = 0, items = 0;
 for (const [ci, c] of menu.categories.entries()) {
-  const cat = must(await db.from('categories').insert({ cafe_id: cafeId, name: c.name, name_fil: c.name_fil, position: ci, layout: c.layout ?? 'list' }).select().single(), `Category ${c.name}`);
+  const cat = must(await db.from('categories').insert({ cafe_id: cafeId, name: c.name, name_fil: c.name_fil, position: ci, layout: c.layout ?? 'list', ...(c.station ? { station: c.station } : {}) }).select().single(), `Category ${c.name}`);
   const rows = [];
   for (const [ii, it] of c.items.entries()) {
     const photo_url = it.photo ? await upload(it.photo, 'items') : null;
