@@ -21,7 +21,8 @@ function Meta({ item, inline }: { item: Item; inline?: boolean }) {
 type CartLine = { key: string; item_id: string; qty: number; options: string[] };
 type TabOrder = { id: string; number: number; status: OrderStatus; total: number; created_at: string;
   items: { name: string; qty: number; unit_price: number; options: { name: string }[] }[] };
-type TableStatus = { session: { id: string; status: 'open' | 'paid' } | null; orders: TabOrder[]; requests: { kind: 'waiter' | 'bill' }[] };
+type TableStatus = { session: { id: string; status: 'open' | 'paid' } | null; orders: TabOrder[]; requests: { kind: 'waiter' | 'bill' }[];
+  moved_to?: { number: number; label: string | null } | null }; // staff moved this phone's tab to another table
 
 const STEP: Record<OrderStatus, number> = { new: 1, preparing: 2, ready: 3, served: 4, cancelled: 0 };
 const PILL: Record<OrderStatus, string> = {
@@ -222,6 +223,14 @@ export default function CustomerMenu({ cafe, categories, items, token, table }: 
           </div>
         )}
       </nav>
+
+      {/* Staff moved this phone's tab to another table */}
+      {status?.moved_to && (
+        <section className="mx-4 mt-4 rounded-2xl border-2 border-amber-400 bg-amber-50 p-4">
+          <p className="font-bold">⇄ {s.tabMoved} {status.moved_to.label ? `${status.moved_to.label} (${s.table} ${status.moved_to.number})` : `${s.table} ${status.moved_to.number}`}</p>
+          <p className="mt-1 text-sm">{s.tabMovedHint}</p>
+        </section>
+      )}
 
       {/* Running tab */}
       {tabOrders.length > 0 && (

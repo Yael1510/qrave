@@ -54,7 +54,7 @@ Open http://localhost:3000. Sign up, create your cafe, add a category and some i
 - Orders are rate-limited per table. Photos upload only into the owner's own cafe folder.
 
 ## Tests
-`node scripts/test-db.mjs` runs the migration in an embedded Postgres and checks ordering, pricing, tabs and cross-cafe isolation (29 checks).
+`node scripts/test-db.mjs` runs the migration in an embedded Postgres and checks ordering, pricing, tabs and cross-cafe isolation, including moving a tab to another table (47 checks).
 
 ## Next phase
 - PayMongo monthly subscriptions with a free trial (GCash, Maya, cards)
@@ -75,4 +75,4 @@ npm run dev            # http://localhost:3000
 To deploy from that computer: `npx vercel login`, then `npx vercel link --project qrave` (pick the existing project), then `npx vercel deploy --prod`.
 The live site's keys are already stored in Vercel, so deploys work without copying `.env.local`.
 
-Database changes live in `supabase/migrations/` (0001 → 0003, all already applied to the live project).
+Database changes live in `supabase/migrations/` (0001 → 0003 are applied to the live project; 0004, moving a tab to another table, is not yet: paste it into the SQL Editor and click **Run**).

@@ -1,0 +1,473 @@
+{
+ "cafe": {
+  "name": "Cozy Cup Cafe",
+  "slug": "cozycup",
+  "tagline": "Slow coffee. Warm welcome.",
+  "primary_color": "#2b0a06",
+  "logo": "logo.svg"
+ },
+ "categories": [
+  {
+   "name": "Hot Drinks",
+   "name_fil": "Mainit na Inumin",
+   "layout": "list",
+   "items": [
+    {
+     "name": "Café Latte",
+     "name_fil": null,
+     "price": 150,
+     "description": "Double shot, steamed milk, rosetta on top",
+     "photo": "cafe-latte.jpg",
+     "tags": [
+      "vegetarian"
+     ],
+     "options": [
+      {
+       "name": "Iced",
+       "name_fil": "Malamig",
+       "price": 20
+      },
+      {
+       "name": "Oat milk",
+       "name_fil": null,
+       "price": 35
+      },
+      {
+       "name": "Extra espresso shot",
+       "name_fil": null,
+       "price": 40
+      }
+     ]
+    },
+    {
+     "name": "Cappuccino",
+     "name_fil": null,
+     "price": 160,
+     "description": "Espresso, milk and thick foam, 240 ml",
+     "photo": "cappuccino.jpg",
+     "tags": [
+      "vegetarian"
+     ],
+     "options": [
+      {
+       "name": "Iced",
+       "name_fil": "Malamig",
+       "price": 20
+      },
+      {
+       "name": "Oat milk",
+       "name_fil": null,
+       "price": 35
+      },
+      {
+       "name": "Extra espresso shot",
+       "name_fil": null,
+       "price": 40
+      }
+     ]
+    },
+    {
+     "name": "Oat Flat White",
+     "name_fil": null,
+     "price": 165,
+     "description": "Ristretto with silky oat milk, 180 ml",
+     "photo": "oat-flat-white.jpg",
+     "tags": [
+      "vegan"
+     ],
+     "options": [
+      {
+       "name": "Iced",
+       "name_fil": "Malamig",
+       "price": 20
+      },
+      {
+       "name": "Oat milk",
+       "name_fil": null,
+       "price": 35
+      },
+      {
+       "name": "Extra espresso shot",
+       "name_fil": null,
+       "price": 40
+      }
+     ]
+    },
+    {
+     "name": "Honey Lavender Latte",
+     "name_fil": null,
+     "price": 195,
+     "description": "Batangas honey, lavender, double shot",
+     "photo": "honey-lavender-latte.jpg",
+     "tags": [
+      "vegetarian"
+     ],
+     "options": [
+      {
+       "name": "Iced",
+       "name_fil": "Malamig",
+       "price": 20
+      },
+      {
+       "name": "Oat milk",
+       "name_fil": null,
+       "price": 35
+      },
+      {
+       "name": "Extra espresso shot",
+       "name_fil": null,
+       "price": 40
+      }
+     ]
+    },
+    {
+     "name": "Americano",
+     "name_fil": null,
+     "price": 130,
+     "description": "100% Arabica, double shot, 240 ml",
+     "photo": "americano.jpg",
+     "tags": [
+      "vegan"
+     ],
+     "options": [
+      {
+       "name": "Iced",
+       "name_fil": "Malamig",
+       "price": 20
+      },
+      {
+       "name": "Oat milk",
+       "name_fil": null,
+       "price": 35
+      },
+      {
+       "name": "Extra espresso shot",
+       "name_fil": null,
+       "price": 40
+      }
+     ]
+    },
+    {
+     "name": "Dirty Chai",
+     "name_fil": null,
+     "price": 185,
+     "description": "House-spiced chai with a shot of espresso",
+     "photo": "dirty-chai.jpg",
+     "tags": [
+      "vegetarian"
+     ],
+     "options": [
+      {
+       "name": "Iced",
+       "name_fil": "Malamig",
+       "price": 20
+      },
+      {
+       "name": "Oat milk",
+       "name_fil": null,
+       "price": 35
+      },
+      {
+       "name": "Extra espresso shot",
+       "name_fil": null,
+       "price": 40
+      }
+     ]
+    },
+    {
+     "name": "Tablea Hot Chocolate",
+     "name_fil": "Tsokolate",
+     "price": 160,
+     "description": "Batangas tablea, sea salt, cocoa dust",
+     "photo": "tablea-hot-chocolate.jpg",
+     "tags": [
+      "vegetarian"
+     ],
+     "options": [
+      {
+       "name": "Iced",
+       "name_fil": "Malamig",
+       "price": 20
+      },
+      {
+       "name": "Oat milk",
+       "name_fil": null,
+       "price": 35
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Iced & Blended",
+   "name_fil": "Malamig na Inumin",
+   "layout": "list",
+   "items": [
+    {
+     "name": "Iced Spanish Latte",
+     "name_fil": null,
+     "price": 185,
+     "description": "Espresso, milk, condensed milk, ice",
+     "photo": "iced-spanish-latte.jpg",
+     "tags": [
+      "vegetarian"
+     ],
+     "options": [
+      {
+       "name": "Oat milk",
+       "name_fil": null,
+       "price": 35
+      },
+      {
+       "name": "Extra espresso shot",
+       "name_fil": null,
+       "price": 40
+      },
+      {
+       "name": "Less sweet",
+       "name_fil": "Hindi masyadong matamis",
+       "price": 0
+      }
+     ]
+    },
+    {
+     "name": "Maple Cold Brew",
+     "name_fil": null,
+     "price": 175,
+     "description": "18-hour steep with a float of maple cream",
+     "photo": "maple-cold-brew.jpg",
+     "tags": [
+      "vegetarian"
+     ],
+     "options": [
+      {
+       "name": "Oat milk",
+       "name_fil": null,
+       "price": 35
+      },
+      {
+       "name": "Extra espresso shot",
+       "name_fil": null,
+       "price": 40
+      },
+      {
+       "name": "Less sweet",
+       "name_fil": "Hindi masyadong matamis",
+       "price": 0
+      }
+     ]
+    },
+    {
+     "name": "Iced Ube Latte",
+     "name_fil": null,
+     "price": 190,
+     "description": "House ube halaya and milk, espresso optional",
+     "photo": "iced-ube-latte.jpg",
+     "tags": [
+      "vegetarian"
+     ],
+     "options": [
+      {
+       "name": "Oat milk",
+       "name_fil": null,
+       "price": 35
+      },
+      {
+       "name": "Extra espresso shot",
+       "name_fil": null,
+       "price": 40
+      },
+      {
+       "name": "Less sweet",
+       "name_fil": "Hindi masyadong matamis",
+       "price": 0
+      }
+     ]
+    },
+    {
+     "name": "Iced Oat Matcha",
+     "name_fil": null,
+     "price": 180,
+     "description": "Ceremonial matcha, oat milk, ice",
+     "photo": "iced-oat-matcha.jpg",
+     "tags": [
+      "vegan"
+     ],
+     "options": [
+      {
+       "name": "Oat milk",
+       "name_fil": null,
+       "price": 35
+      },
+      {
+       "name": "Extra espresso shot",
+       "name_fil": null,
+       "price": 40
+      },
+      {
+       "name": "Less sweet",
+       "name_fil": "Hindi masyadong matamis",
+       "price": 0
+      }
+     ]
+    },
+    {
+     "name": "Caramel Frappé",
+     "name_fil": null,
+     "price": 205,
+     "description": "Blended espresso, caramel, whipped cream",
+     "photo": "caramel-frappe.jpg",
+     "tags": [
+      "vegetarian"
+     ],
+     "options": [
+      {
+       "name": "Oat milk",
+       "name_fil": null,
+       "price": 35
+      },
+      {
+       "name": "Extra espresso shot",
+       "name_fil": null,
+       "price": 40
+      },
+      {
+       "name": "Less sweet",
+       "name_fil": "Hindi masyadong matamis",
+       "price": 0
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Bakery",
+   "name_fil": "Tinapay at Pastry",
+   "layout": "grid",
+   "items": [
+    {
+     "name": "Ensaymada",
+     "name_fil": null,
+     "price": 110,
+     "description": "Buttery brioche, sugar and queso de bola",
+     "photo": "ensaymada.jpg",
+     "tags": [
+      "vegetarian"
+     ],
+     "options": [
+      {
+       "name": "Warmed",
+       "name_fil": "Pinainit",
+       "price": 0
+      }
+     ]
+    },
+    {
+     "name": "Butter Croissant",
+     "name_fil": null,
+     "price": 120,
+     "description": "Cultured butter, 72 layers, baked at dawn",
+     "photo": "butter-croissant.jpg",
+     "tags": [
+      "vegetarian"
+     ],
+     "options": [
+      {
+       "name": "Warmed",
+       "name_fil": "Pinainit",
+       "price": 0
+      }
+     ]
+    },
+    {
+     "name": "Cardamom Bun",
+     "name_fil": null,
+     "price": 145,
+     "description": "Swedish-style knot with pearl sugar",
+     "photo": "cardamom-bun.jpg",
+     "tags": [
+      "vegetarian"
+     ],
+     "options": [
+      {
+       "name": "Warmed",
+       "name_fil": "Pinainit",
+       "price": 0
+      }
+     ]
+    },
+    {
+     "name": "Brown Butter Cookie",
+     "name_fil": null,
+     "price": 95,
+     "description": "Chewy middle, dark chocolate chunks",
+     "photo": "brown-butter-cookie.jpg",
+     "tags": [
+      "vegetarian"
+     ],
+     "options": []
+    },
+    {
+     "name": "Banana Walnut Loaf",
+     "name_fil": null,
+     "price": 125,
+     "description": "Thick slices, toasted with salted butter",
+     "photo": "banana-walnut-loaf.jpg",
+     "tags": [
+      "vegetarian",
+      "contains-nuts"
+     ],
+     "options": [
+      {
+       "name": "Warmed",
+       "name_fil": "Pinainit",
+       "price": 0
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "All-day Toasts",
+   "name_fil": "Toast Buong Araw",
+   "layout": "list",
+   "items": [
+    {
+     "name": "Sourdough Toastie",
+     "name_fil": null,
+     "price": 295,
+     "description": "Aged cheddar, caramelized onion, pickles",
+     "photo": "sourdough-toastie.jpg",
+     "tags": [
+      "vegetarian"
+     ],
+     "options": [
+      {
+       "name": "Add a fried egg",
+       "name_fil": null,
+       "price": 45
+      }
+     ]
+    },
+    {
+     "name": "Smashed Avo Toast",
+     "name_fil": null,
+     "price": 345,
+     "description": "Chili crisp, lime and feta on seeded sourdough",
+     "photo": "smashed-avo-toast.jpg",
+     "tags": [
+      "vegetarian",
+      "spicy"
+     ],
+     "options": [
+      {
+       "name": "Add a fried egg",
+       "name_fil": null,
+       "price": 45
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}

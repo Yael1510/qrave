@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { money, tableName, timeAgo } from '@/lib/format';
-import type { Order, OrderStatus, ServiceRequest, TableSession } from '@/lib/types';
+import type { CafeTable, Order, OrderStatus, ServiceRequest, TableSession } from '@/lib/types';
 
 const COLUMNS: { status: OrderStatus; title: string }[] = [
   { status: 'new', title: '🆕 New' },
@@ -36,6 +36,8 @@ export default function OrdersBoard({ cafeId, currency }: { cafeId: string; curr
   const [orders, setOrders] = useState<Order[]>([]);
   const [requests, setRequests] = useState<ServiceRequest[]>([]);
   const [sessions, setSessions] = useState<TableSession[]>([]);
+  const [tables, setTables] = useState<Pick<CafeTable, 'id' | 'number' | 'label'>[]>([]);
+  const [moving, setMoving] = useState<string | null>(null); // session id whose "Move to table" picker is open
   const [view, setView] = useState<'orders' | 'tables'>('orders');
   const [live, setLive] = useState(false);
   const [sound, setSound] = useState(true);
@@ -75,6 +77,11 @@ export default function OrdersBoard({ cafeId, currency }: { cafeId: string; curr
   }, [supabase, cafeId]);
 
   useEffect(() => {
+    supabase.from('cafe_tables').select('id, number, label').eq('cafe_id', cafeId).eq('active', true).order('number')
+      .then(({ data }) => setTables(data ?? []));
+  }, [supabase, cafeId]);
+
+  useEffect(() => {
     load();
     let timer: ReturnType<typeof setTimeout> | undefined;
     const debounced = () => { clearTimeout(timer); timer = setTimeout(load, 250); };
@@ -104,6 +111,21 @@ export default function OrdersBoard({ cafeId, currency }: { cafeId: string; curr
     if (!confirm(`Mark ${tableName(s.cafe_tables)} as paid (${money(total, currency)}) and close the tab?`)) return;
     const { error } = await supabase.rpc('close_session', { p_session: s.id });
     if (error) alert(error.message);
+    load();
+  }
+
+  // Customers changed tables: move the whole tab (combined with the new table's tab if it has one).
+  async function moveTab(s: TableSession, tableId: string) {
+    const to = tables.find(t => t.id === tableId);
+    if (!to) return;
+    const occupied = sessions.some(x => x.table_id === tableId);
+    const question = occupied
+      ? `${tableName(to)} already has an open tab. Combine ${tableName(s.cafe_tables)}'s orders into it, as one bill?`
+      : `Move ${tableName(s.cafe_tables)}'s tab and orders to ${tableName(to)}?`;
+    if (!confirm(question)) return;
+    const { error } = await supabase.rpc('move_session', { p_session: s.id, p_table: tableId });
+    if (error) alert(/TAB_CLOSED/.test(error.message) ? 'This tab was already closed or moved.' : error.message);
+    setMoving(null);
     load();
   }
 
@@ -212,6 +234,21 @@ export default function OrdersBoard({ cafeId, currency }: { cafeId: string; curr
                 {unserved > 0 && <p className="mt-1 text-xs text-amber-700">{unserved} order(s) not served yet</p>}
                 {wantsBill && <p className="mt-1 text-xs font-semibold text-amber-700">🧾 Asked for the bill</p>}
                 <button className="btn mt-3 w-full" onClick={() => closeTab(s, total)}>Mark paid & close tab</button>
+                {moving === s.id ? (
+                  <div className="mt-2 rounded-xl bg-soft p-3">
+                    <label className="text-xs font-semibold text-muted" htmlFor={`move-${s.id}`}>Customers moved to</label>
+                    <select id={`move-${s.id}`} className="input mt-1 w-full" defaultValue=""
+                      onChange={e => e.target.value && moveTab(s, e.target.value)}>
+                      <option value="" disabled>Choose a table…</option>
+                      {tables.filter(t => t.id !== s.table_id).map(t => (
+                        <option key={t.id} value={t.id}>{tableName(t)}{sessions.some(x => x.table_id === t.id) ? ' · has a tab (combine)' : ''}</option>
+                      ))}
+                    </select>
+                    <button className="mt-2 text-xs font-semibold text-muted underline" onClick={() => setMoving(null)}>Cancel</button>
+                  </div>
+                ) : (
+                  <button className="btn-secondary btn-sm mt-2 w-full" onClick={() => setMoving(s.id)}>⇄ Move to another table</button>
+                )}
               </div>
             );
           })}

@@ -116,6 +116,40 @@ const order3 = await as(null, async () => (await q(`select place_order('kape-uno
 const st3 = await as(null, async () => (await q(`select table_status('kape-uno',$1) s`, [token]))[0].s);
 ok(order3.number === 3 && st3.orders.length === 1 && st3.session.status === 'open', 'next order after payment starts a fresh tab');
 
+// --- moving a tab to another table (0004) ---
+const tok = async n => (await q(`select id, token from cafe_tables where cafe_id = $1 and number = $2`, [cafeA, n]))[0];
+const T4 = await tok(4), T5 = await tok(5);
+const tB = (await q(`select id from cafe_tables where cafe_id = $1 limit 1`, [cafeB]))[0].id;
+const mine = st3.session.id; // the phone that ordered at table 2
+await as(null, () => throws(() => q(`select move_session($1,$2)`, [mine, T4.id]), 'permission denied', 'customers cannot move tabs'));
+await as(B, () => throws(() => q(`select move_session($1,$2)`, [mine, T4.id]), 'Not allowed', 'other cafe cannot move tab'));
+await as(S, () => throws(() => q(`select move_session($1,$2)`, [mine, tB]), 'BAD_TABLE', 'cannot move to another cafe\'s table'));
+await as(S, () => throws(() => q(`select move_session($1,$2)`, [mine, t2]), 'SAME_TABLE', 'cannot move to the same table'));
+await as(null, () => q(`select request_service('kape-uno',$1,'waiter')`, [token]));
+const mv = await as(S, async () => (await q(`select move_session($1,$2) r`, [mine, T4.id]))[0].r);
+ok(mv.merged === false && mv.table_number === 4, 'staff moved the tab to free table 4');
+const at4 = await as(null, async () => (await q(`select table_status('kape-uno',$1) s`, [T4.token]))[0].s);
+ok(at4.orders.length === 1 && at4.session.id === mine && at4.requests.some(r => r.kind === 'waiter'), 'table 4 shows the moved order and waiter request');
+ok((await q(`select count(*)::int n from orders where session_id = $1 and table_id <> $2`, [mine, T4.id]))[0].n === 0, 'moved orders point at table 4 for the kitchen');
+const oldPhone = await as(null, async () => (await q(`select table_status('kape-uno',$1,$2) s`, [token, mine]))[0].s);
+ok(oldPhone.session === null && oldPhone.moved_to?.number === 4, 'old table page tells the phone its tab moved to table 4');
+const nextGuest = await as(null, async () => (await q(`select table_status('kape-uno',$1) s`, [token]))[0].s);
+ok(nextGuest.session === null && !nextGuest.moved_to && nextGuest.requests.length === 0, 'next guest at table 2 starts clean');
+
+const o5 = await as(null, async () => (await q(`select place_order('kape-uno',$1,$2) r`, [T5.token, JSON.stringify([{ item_id: latte, qty: 1 }])]))[0].r);
+const s5 = (await q(`select session_id from orders where id = $1`, [o5.order_id]))[0].session_id;
+await as(null, () => q(`select request_service('kape-uno',$1,'waiter')`, [T5.token]));
+const mg = await as(S, async () => (await q(`select move_session($1,$2) r`, [mine, T5.id]))[0].r);
+ok(mg.merged === true && mg.session === s5, 'moving onto a table with an open tab combines them');
+const at5 = await as(null, async () => (await q(`select table_status('kape-uno',$1) s`, [T5.token]))[0].s);
+ok(at5.orders.length === 2 && at5.requests.filter(r => r.kind === 'waiter').length === 1, 'table 5 has one bill with both orders and no duplicate request');
+const phoneAt4 = await as(null, async () => (await q(`select table_status('kape-uno',$1,$2) s`, [T4.token, mine]))[0].s);
+ok(phoneAt4.session === null && phoneAt4.moved_to?.number === 5, 'combined tab: phone is told to go to table 5');
+await as(S, () => throws(() => q(`select move_session($1,$2)`, [mine, T4.id]), 'TAB_CLOSED', 'a combined tab cannot be moved again'));
+await as(S, () => q(`select close_session($1)`, [s5]));
+const paidPhone = await as(null, async () => (await q(`select table_status('kape-uno',$1,$2) s`, [T4.token, mine]))[0].s);
+ok(!paidPhone.moved_to, 'after the combined tab is paid, the old page stops pointing to it');
+
 // --- storage policy ---
 await as(A, () => q(`insert into storage.objects (bucket_id,name) values ('cafe-media',$1)`, [`${cafeA}/latte.jpg`]));
 ok(true, 'owner can upload into own cafe folder');
