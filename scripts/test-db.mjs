@@ -164,5 +164,39 @@ ok(det.badge === 'Best Seller' && det.prep_minutes === 15 && det.calories === 25
 await as(A, () => throws(() => q(`update categories set layout = 'carousel' where id = $1`, [cat]), 'check', 'invalid layout rejected'));
 await as(B, async () => ok((await q(`update cafes set links = '{}' where id = $1 returning id`, [cafeA])).length === 0, 'other owner cannot change cafe A links'));
 
+// --- stations (0005): drinks to the bar, food to the kitchen ---
+const { pastry, croissant } = await as(A, async () => {
+  await q(`update categories set station = 'bar' where id = $1`, [cat]);
+  const pastry = (await q(`insert into categories (cafe_id,name) values ($1,'Pastries') returning id, station`, [cafeA]))[0];
+  const croissant = (await q(`insert into items (cafe_id,category_id,name,price) values ($1,$2,'Croissant',95) returning id`, [cafeA, pastry.id]))[0].id;
+  return { pastry, croissant };
+});
+ok(pastry.station === 'kitchen', 'new categories go to the kitchen by default');
+await as(A, () => throws(() => q(`update categories set station = 'patio' where id = $1`, [cat]), 'check', 'invalid station rejected'));
+const tok3 = (await q(`select token from cafe_tables where cafe_id = $1 and number = 3`, [cafeA]))[0].token;
+const so = await as(null, async () => (await q(`select place_order('kape-uno',$1,$2) r`, [tok3,
+  JSON.stringify([{ item_id: latte, qty: 1 }, { item_id: croissant, qty: 1 }])]))[0].r);
+const lines = async () => Object.fromEntries((await q(`select name, station, status from order_items where order_id = $1`, [so.order_id])).map(r => [r.name, r]));
+const ordStatus = async () => (await q(`select status from orders where id = $1`, [so.order_id]))[0].status;
+let L = await lines();
+ok(L.Latte.station === 'bar' && L.Croissant.station === 'kitchen' && L.Latte.status === 'new', 'order lines copy their category station');
+await as(null, () => throws(() => q(`select set_station_status($1,'bar','ready')`, [so.order_id]), 'permission denied', 'customers cannot change station status'));
+await as(B, () => throws(() => q(`select set_station_status($1,'bar','ready')`, [so.order_id]), 'Not allowed', 'other cafe cannot change station status'));
+await as(S, () => q(`select set_station_status($1,'bar','preparing')`, [so.order_id]));
+L = await lines();
+ok(L.Latte.status === 'preparing' && L.Croissant.status === 'new' && (await ordStatus()) === 'preparing', 'bar starts: only the latte moves, order is preparing');
+await as(S, () => q(`select set_station_status($1,'bar','ready')`, [so.order_id]));
+ok((await lines()).Latte.status === 'ready' && (await ordStatus()) === 'preparing', 'drinks ready, food not started: order still preparing');
+const phone = await as(null, async () => (await q(`select table_status('kape-uno',$1) s`, [tok3]))[0].s);
+ok(phone.orders[0].items.some(i => i.station === 'bar' && i.status === 'ready'), 'customer status includes each line\'s station and status');
+await as(S, () => q(`select set_station_status($1,'kitchen','ready')`, [so.order_id]));
+ok((await lines()).Croissant.status === 'ready' && (await ordStatus()) === 'ready', 'order is ready only once both stations are ready');
+await as(S, () => q(`update orders set status = 'served' where id = $1`, [so.order_id]));
+await as(S, () => throws(() => q(`select set_station_status($1,'bar','preparing')`, [so.order_id]), 'ORDER_CLOSED', 'served order cannot be moved back'));
+const so2 = await as(null, async () => (await q(`select place_order('kape-uno',$1,$2) r`, [tok3,
+  JSON.stringify([{ item_id: latte, qty: 1 }, { item_id: croissant, qty: 1 }])]))[0].r);
+await as(S, () => q(`update orders set status = 'ready' where id = $1`, [so2.order_id]));
+ok((await q(`select bool_and(status = 'ready') r from order_items where order_id = $1`, [so2.order_id]))[0].r, 'setting a whole order ready directly also readies its lines');
+
 console.log(failures ? `\n${failures} check(s) FAILED` : '\nAll database checks passed');
 process.exit(failures ? 1 : 0);

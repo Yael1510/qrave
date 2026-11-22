@@ -27,6 +27,8 @@ export interface Category {
   name_fil: string | null;
   position: number;
   layout?: 'list' | 'grid';
+  /** Where this category's orders are made: drinks at the bar, food in the kitchen. */
+  station?: Station;
 }
 
 export interface ItemOption {
@@ -64,6 +66,9 @@ export interface CafeTable {
 }
 
 export type OrderStatus = 'new' | 'preparing' | 'ready' | 'served' | 'cancelled';
+export type Station = 'bar' | 'kitchen';
+/** One order line's progress at its station. */
+export type ItemStatus = 'new' | 'preparing' | 'ready';
 
 export interface OrderItem {
   id: string;
@@ -71,6 +76,9 @@ export interface OrderItem {
   unit_price: number;
   qty: number;
   options: ItemOption[];
+  /** Copied from the item's category when the order was placed (missing on databases without 0005). */
+  station?: Station;
+  status?: ItemStatus;
 }
 
 export interface Order {

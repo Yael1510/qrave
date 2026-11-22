@@ -3,7 +3,8 @@
 // In-memory stand-in for Supabase, used only by the development previews under /preview.
 // Data lives in localStorage, so the customer menu and the staff screen (open in different tabs or frames)
 // see each other's changes live. Nothing is sent to Supabase.
-import type { Cafe, CafeTable, Category, Item, Member, Order, OrderItem, ServiceRequest, TableSession } from '@/lib/types';
+import { applyStationStatus, lineStatus } from '@/lib/stations';
+import type { Cafe, CafeTable, Category, Item, Member, Order, OrderItem, ServiceRequest, Station, TableSession } from '@/lib/types';
 
 export type DemoOrder = Omit<Order, 'cafe_tables' | 'order_items'> & { order_items: OrderItem[] };
 export interface DemoDB {
@@ -21,7 +22,7 @@ export interface DemoDB {
 type Row = Record<string, unknown>;
 type Result = { data: unknown; error: { message: string } | null };
 
-const KEY = 'qrave-demo-v1';
+const KEY = 'qrave-demo-v2'; // v2: stations (older saved demo data is replaced)
 const listeners = new Set<() => void>();
 let mem: DemoDB | null = null;
 
@@ -59,7 +60,7 @@ const tableRef = (db: DemoDB, id: unknown) => {
 };
 
 const DEFAULTS: Record<string, () => Row> = {
-  categories: () => ({ name_fil: null, layout: 'list' }),
+  categories: () => ({ name_fil: null, layout: 'list', station: 'kitchen' }),
   items: () => ({ name_fil: null, description: null, description_fil: null, photo_url: null, tags: [], options: [], available: true }),
   cafe_tables: () => ({ label: null, token: uid().replace(/-/g, ''), active: true }),
 };
@@ -107,6 +108,10 @@ class Query implements PromiseLike<Result> {
     if (this.op === 'update') {
       out = rows.filter(match);
       out.forEach(r => Object.assign(r, this.payload, this.table === 'orders' ? { updated_at: nowIso() } : {}));
+      // Like the database trigger: an order moved on directly brings its lines along.
+      if (this.table === 'orders' && this.payload && 'status' in this.payload) {
+        (out as unknown as DemoOrder[]).forEach(o => { o.order_items = o.order_items.map(i => ({ ...i, status: lineStatus(o.status, i) })); });
+      }
       write(db);
     }
     if (this.op === 'delete') {
@@ -154,7 +159,7 @@ function rpc(name: string, a: Record<string, unknown>): Promise<Result> {
         if (!session) return ok({ session: null, orders: [], requests, moved_to });
         const orders = db.orders.filter(o => o.session_id === session.id).map(o => ({
           id: o.id, number: o.number, status: o.status, total: o.total, created_at: o.created_at,
-          items: o.order_items.map(i => ({ name: i.name, qty: i.qty, unit_price: i.unit_price, options: i.options })),
+          items: o.order_items.map(i => ({ name: i.name, qty: i.qty, unit_price: i.unit_price, options: i.options, station: i.station ?? 'kitchen', status: lineStatus(o.status, i) })),
         }));
         return ok({ session: { id: session.id, status: session.status }, orders, requests, moved_to });
       }
@@ -167,7 +172,8 @@ function rpc(name: string, a: Record<string, unknown>): Promise<Result> {
           const it = db.items.find(i => i.id === l.item_id);
           if (!it || !it.available) return fail('ITEM_UNAVAILABLE');
           const opts = it.options.filter(o => l.options.includes(o.name));
-          order_items.push({ id: uid(), name: it.name, qty: l.qty, options: opts, unit_price: Number(it.price) + opts.reduce((s, o) => s + Number(o.price), 0) });
+          const station: Station = db.categories.find(c => c.id === it.category_id)?.station ?? 'kitchen';
+          order_items.push({ id: uid(), name: it.name, qty: l.qty, options: opts, unit_price: Number(it.price) + opts.reduce((s, o) => s + Number(o.price), 0), station, status: 'new' });
         }
         let session = db.table_sessions.find(s => s.table_id === table.id && s.status === 'open');
         if (!session) {
@@ -220,6 +226,14 @@ function rpc(name: string, a: Record<string, unknown>): Promise<Result> {
         });
         write(db);
         return ok({ session: destId, merged: Boolean(dest), table_number: to.number, table_label: to.label });
+      }
+      case 'set_station_status': {
+        const i = db.orders.findIndex(o => o.id === a.p_order);
+        if (i < 0) return fail('Not allowed');
+        if (!['new', 'preparing', 'ready'].includes(db.orders[i].status)) return fail('ORDER_CLOSED');
+        db.orders[i] = { ...applyStationStatus(db.orders[i], (a.p_station as Station | null) ?? null, a.p_status as 'preparing' | 'ready'), updated_at: nowIso() };
+        write(db);
+        return ok(db.orders[i].status);
       }
       case 'set_item_available': {
         const it = db.items.find(i => i.id === a.p_item);

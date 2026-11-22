@@ -54,7 +54,7 @@ Open http://localhost:3000. Sign up, create your cafe, add a category and some i
 - Orders are rate-limited per table. Photos upload only into the owner's own cafe folder.
 
 ## Tests
-`node scripts/test-db.mjs` runs the migration in an embedded Postgres and checks ordering, pricing, tabs and cross-cafe isolation, including moving a tab to another table (47 checks).
+`node scripts/test-db.mjs` runs the migration in an embedded Postgres and checks ordering, pricing, tabs and cross-cafe isolation, including moving a tab to another table and bar/kitchen stations (58 checks).
 
 ## Next phase
 - PayMongo monthly subscriptions with a free trial (GCash, Maya, cards)
@@ -76,4 +76,6 @@ Deploys are automatic: every push to `main` on GitHub builds and goes live on Ve
 To deploy by hand from that computer instead: `npx vercel login`, then `npx vercel link --project qrave` (pick the existing project), then `npx vercel deploy --prod`.
 The live site's keys are already stored in Vercel, so deploys work without copying `.env.local`.
 
-Database changes live in `supabase/migrations/` (0001 → 0003 are applied to the live project; 0004, moving a tab to another table, is not yet: paste it into the SQL Editor and click **Run**).
+Database changes live in `supabase/migrations/` (0001 → 0003 are applied to the live project; 0004, moving a tab to another table, and 0005, bar/kitchen stations, are not yet: paste each into the SQL Editor in order and click **Run**).
+
+Stations: each menu category goes to the ☕ Bar or the 🍳 Kitchen (switch it in Menu). On the Orders screen, pick **All** (counter), **Bar** or **Kitchen** per device: the bar and kitchen see only their own items and move them on their own; an order is Ready once every station is done.

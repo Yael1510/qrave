@@ -4,7 +4,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { money } from '@/lib/format';
 import { TAGS, errorText, t as strings, type Lang } from '@/lib/i18n';
-import type { Cafe, Category, Item, OrderStatus } from '@/lib/types';
+import { STATION_ICON, stationStatus, stationsIn } from '@/lib/stations';
+import type { Cafe, Category, Item, ItemStatus, OrderStatus, Station } from '@/lib/types';
 import { ChevronDownIcon, ClockIcon, FacebookIcon, FlameIcon, InstagramIcon, MapPinIcon, MenuIcon, PhoneIcon, TiktokIcon } from '@/components/Icons';
 
 function Meta({ item, inline }: { item: Item; inline?: boolean }) {
@@ -20,7 +21,7 @@ function Meta({ item, inline }: { item: Item; inline?: boolean }) {
 
 type CartLine = { key: string; item_id: string; qty: number; options: string[] };
 type TabOrder = { id: string; number: number; status: OrderStatus; total: number; created_at: string;
-  items: { name: string; qty: number; unit_price: number; options: { name: string }[] }[] };
+  items: { name: string; qty: number; unit_price: number; options: { name: string }[]; station?: Station; status?: ItemStatus }[] };
 type TableStatus = { session: { id: string; status: 'open' | 'paid' } | null; orders: TabOrder[]; requests: { kind: 'waiter' | 'bill' }[];
   moved_to?: { number: number; label: string | null } | null }; // staff moved this phone's tab to another table
 
@@ -250,6 +251,12 @@ export default function CustomerMenu({ cafe, categories, items, token, table }: 
                 {o.status !== 'cancelled' && (
                   <div className="mt-2 flex gap-1">
                     {[1, 2, 3, 4].map(n => <div key={n} className={`h-1.5 flex-1 rounded-full ${n <= STEP[o.status] ? 'bg-brand' : 'bg-line'}`} />)}
+                  </div>
+                )}
+                {/* Drinks and food are made at different stations: say how each part is doing */}
+                {(o.status === 'new' || o.status === 'preparing') && stationsIn(o.items).length > 1 && (
+                  <div className="mt-1.5 text-xs font-semibold">
+                    {stationsIn(o.items).map(x => `${STATION_ICON[x]} ${s.stations[x]} ${s.lineStatus[stationStatus(o.status, o.items, x) ?? 'new']}`).join(' · ')}
                   </div>
                 )}
                 <div className="mt-1.5 text-xs text-muted">{o.items.map(i => `${i.qty}× ${i.name}`).join(', ')} · {money(o.total, cafe.currency)}</div>
