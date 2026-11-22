@@ -57,6 +57,7 @@ export default function CustomerMenu({ cafe, categories, items, token, table }: 
   const [status, setStatus] = useState<TableStatus | null>(null);
   const [activeCat, setActiveCat] = useState(categories[0]?.id);
   const [catsOpen, setCatsOpen] = useState(false);
+  const sessionRef = useRef<string | null>(null);
 
   const itemById = useMemo(() => new Map(items.map(i => [i.id, i])), [items]);
   const nameOf = (x: { name: string; name_fil?: string | null }) => (lang === 'fil' && x.name_fil ? x.name_fil : x.name);
@@ -79,17 +80,16 @@ export default function CustomerMenu({ cafe, categories, items, token, table }: 
   // Poll the table's tab so customers see status changes without refreshing.
   const refresh = useCallback(async () => {
     if (!token) return;
-    // Remember the tab this phone was part of, so only this phone still sees it after it's paid.
-    const key = `session:${cafe.slug}:${token}`;
-    let mine: string | null = null;
-    try { mine = localStorage.getItem(key); } catch {}
+    // Only remember the tab for as long as this page is open: if it's paid while the customer is
+    // looking, they see "Paid"; a new scan or reload always starts with a clean menu.
+    const mine = sessionRef.current;
     let { data, error } = await supabase.rpc('table_status', { p_slug: cafe.slug, p_token: token, p_session: mine });
     if (error && /p_session|function/i.test(error.message)) {
       ({ data, error } = await supabase.rpc('table_status', { p_slug: cafe.slug, p_token: token })); // database not updated yet
     }
     if (!data) return;
     const st = data as TableStatus;
-    if (st.session?.status === 'open') { try { localStorage.setItem(key, st.session.id); } catch {} }
+    if (st.session?.status === 'open') sessionRef.current = st.session.id;
     setStatus(st);
   }, [supabase, cafe.slug, token]);
   useEffect(() => {
