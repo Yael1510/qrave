@@ -1,26 +1,62 @@
 @import "tailwindcss";
 
+@theme {
+  --color-cream: #faf6f1;
+  --color-ink: #2b2118;
+  --color-muted: #8a7b6d;
+  --color-line: #ece3d9;
+  --color-soft: #f3ebe2;
+  --color-brand: var(--brand, #7a4b2a);
+  --color-ok: #2f7d4f;
+  --color-danger: #b33a3a;
+  --font-sans: var(--font-geist-sans), system-ui, sans-serif;
+}
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --brand: #7a4b2a;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-cream);
+  color: var(--color-ink);
+  -webkit-tap-highlight-color: transparent;
+}
+
+@layer components {
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-full bg-brand px-5 py-3 font-semibold text-white transition active:scale-[.98] disabled:cursor-default disabled:opacity-50;
+  }
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 rounded-full bg-soft px-5 py-3 font-semibold text-ink transition active:scale-[.98] disabled:opacity-50;
+  }
+  .btn-sm {
+    @apply px-3 py-2 text-sm;
+  }
+  .input {
+    @apply w-full rounded-xl border border-line bg-white px-4 py-3 text-ink outline-none focus:border-brand focus:ring-2 focus:ring-brand/20;
+  }
+  .label {
+    @apply mb-1 block text-sm font-medium text-ink;
+  }
+  .card {
+    @apply rounded-2xl border border-line bg-white;
+  }
+  .chip {
+    @apply inline-flex items-center gap-1 rounded-full border border-line bg-white px-3 py-1.5 text-sm font-medium whitespace-nowrap;
+  }
+}
+
+@keyframes sheet-up {
+  from { transform: translateY(40px); opacity: 0; }
+}
+.animate-sheet { animation: sheet-up .2s ease-out; }
+
+@keyframes flash-ring {
+  50% { box-shadow: 0 0 0 4px #e0a030; }
+}
+.animate-flash { animation: flash-ring 1.2s ease-out 2; }
+
+@media print {
+  .no-print { display: none !important; }
+  body { background: #fff; }
 }

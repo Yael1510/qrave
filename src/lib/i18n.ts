@@ -1,0 +1,101 @@
+export type Lang = 'en' | 'fil';
+
+/** Diet & allergen tags owners can attach to items. `filter` = shown as a customer filter. */
+export const TAGS: { id: string; en: string; fil: string; emoji: string; filter?: 'has' | 'not' }[] = [
+  { id: 'vegan', en: 'Vegan', fil: 'Vegan', emoji: '🌱', filter: 'has' },
+  { id: 'vegetarian', en: 'Vegetarian', fil: 'Vegetarian', emoji: '🥦', filter: 'has' },
+  { id: 'gluten-free', en: 'Gluten-free', fil: 'Walang gluten', emoji: '🌾', filter: 'has' },
+  { id: 'dairy-free', en: 'Dairy-free', fil: 'Walang gatas', emoji: '🥛', filter: 'has' },
+  { id: 'halal', en: 'Halal', fil: 'Halal', emoji: '☪️', filter: 'has' },
+  { id: 'contains-nuts', en: 'Contains nuts', fil: 'May mani', emoji: '🥜', filter: 'not' },
+  { id: 'spicy', en: 'Spicy', fil: 'Maanghang', emoji: '🌶️' },
+];
+
+const strings = {
+  en: {
+    tagline: 'Order from your table — we’ll bring it over.',
+    menu: 'Menu',
+    table: 'Table',
+    soldOut: 'Sold out',
+    add: 'Add',
+    viewOrder: 'View order',
+    yourOrder: 'Your order',
+    notePlaceholder: 'Anything we should know? (allergies, requests…)',
+    total: 'Total',
+    payNote: 'Pay at the counter or with your server.',
+    placeOrder: 'Place order',
+    sending: 'Sending…',
+    sent: 'Order sent!',
+    sentBody: 'We’re on it. You can follow it at the top of the menu.',
+    backToMenu: 'Back to menu',
+    callWaiter: 'Call waiter',
+    askBill: 'Ask for bill',
+    waiterComing: 'A staff member is on the way.',
+    billComing: 'Your bill is on the way.',
+    tableTab: 'Your table’s orders',
+    tabTotal: 'Tab total',
+    paid: 'Paid — thank you!',
+    orderMore: 'Order more anytime from the menu below.',
+    filters: 'Filters',
+    noMatches: 'No items match these filters.',
+    nutFree: 'Nut-free',
+    scanTitle: 'Scan the QR code on your table to order',
+    scanBody: 'You can browse the menu, but ordering needs your table’s code.',
+    options: 'Options',
+    status: { new: 'Received', preparing: 'Preparing', ready: 'Ready — on its way', served: 'Served', cancelled: 'Cancelled — please ask staff' },
+    errors: {
+      INVALID_TABLE: 'This table code isn’t valid any more. Please scan the QR code again.',
+      ITEM_UNAVAILABLE: 'Something in your order just sold out. Please review your order.',
+      TOO_MANY_ORDERS: 'Too many orders from this table. Please ask a staff member.',
+      EMPTY_ORDER: 'Your order is empty.',
+      default: 'Something went wrong. Please try again.',
+    },
+  },
+  fil: {
+    tagline: 'Mag-order mula sa inyong mesa — dadalhin namin ito sa inyo.',
+    menu: 'Menu',
+    table: 'Mesa',
+    soldOut: 'Ubos na',
+    add: 'Idagdag',
+    viewOrder: 'Tingnan ang order',
+    yourOrder: 'Ang inyong order',
+    notePlaceholder: 'May dapat ba kaming malaman? (allergy, espesyal na hiling…)',
+    total: 'Kabuuan',
+    payNote: 'Magbayad sa counter o sa inyong waiter.',
+    placeOrder: 'Ipadala ang order',
+    sending: 'Ipinapadala…',
+    sent: 'Naipadala ang order!',
+    sentBody: 'Inihahanda na namin. Masusundan ninyo ito sa itaas ng menu.',
+    backToMenu: 'Bumalik sa menu',
+    callWaiter: 'Tumawag ng waiter',
+    askBill: 'Hingin ang bill',
+    waiterComing: 'Papunta na ang aming staff.',
+    billComing: 'Papunta na ang inyong bill.',
+    tableTab: 'Mga order ng inyong mesa',
+    tabTotal: 'Kabuuang bayarin',
+    paid: 'Bayad na — salamat!',
+    orderMore: 'Puwede pang mag-order anumang oras mula sa menu sa ibaba.',
+    filters: 'Salain',
+    noMatches: 'Walang item na tugma sa mga filter na ito.',
+    nutFree: 'Walang mani',
+    scanTitle: 'I-scan ang QR code sa inyong mesa para mag-order',
+    scanBody: 'Puwede ninyong tingnan ang menu, pero kailangan ang code ng mesa para mag-order.',
+    options: 'Mga opsyon',
+    status: { new: 'Natanggap', preparing: 'Inihahanda', ready: 'Handa na — papunta na', served: 'Naihain na', cancelled: 'Kinansela — magtanong sa staff' },
+    errors: {
+      INVALID_TABLE: 'Hindi na valid ang code ng mesang ito. Paki-scan muli ang QR code.',
+      ITEM_UNAVAILABLE: 'May naubos sa inyong order. Pakisuri ang inyong order.',
+      TOO_MANY_ORDERS: 'Masyadong maraming order mula sa mesang ito. Magtanong sa staff.',
+      EMPTY_ORDER: 'Walang laman ang inyong order.',
+      default: 'May nangyaring mali. Pakisubukang muli.',
+    },
+  },
+};
+
+export type Strings = (typeof strings)['en'];
+export const t = (lang: Lang): Strings => strings[lang];
+
+export function errorText(s: Strings, message: string) {
+  const code = (Object.keys(s.errors) as (keyof Strings['errors'])[]).find(k => message.includes(k));
+  return s.errors[code ?? 'default'];
+}

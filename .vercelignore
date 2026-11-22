@@ -1,0 +1,6 @@
+.env*
+!.env.local.example
+node_modules
+.next
+.vercel
+scripts/test-db.mjs
