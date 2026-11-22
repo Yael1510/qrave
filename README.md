@@ -72,7 +72,8 @@ npm run setup          # paste the Supabase Project URL, publishable key and sec
 npm run dev            # http://localhost:3000
 ```
 
-To deploy from that computer: `npx vercel login`, then `npx vercel link --project qrave` (pick the existing project), then `npx vercel deploy --prod`.
+Deploys are automatic: every push to `main` on GitHub builds and goes live on Vercel (other branches get preview deployments).
+To deploy by hand from that computer instead: `npx vercel login`, then `npx vercel link --project qrave` (pick the existing project), then `npx vercel deploy --prod`.
 The live site's keys are already stored in Vercel, so deploys work without copying `.env.local`.
 
 Database changes live in `supabase/migrations/` (0001 → 0003 are applied to the live project; 0004, moving a tab to another table, is not yet: paste it into the SQL Editor and click **Run**).
