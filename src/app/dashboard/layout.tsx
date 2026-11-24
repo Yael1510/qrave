@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { getMembership } from '@/lib/membership';
 import NavLinks from './NavLinks';
 import SignOutButton from './SignOutButton';
+import PlanBanner from './PlanBanner';
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { cafe, role } = await getMembership();
@@ -10,6 +11,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
     { href: '/dashboard/stock', label: 'Sold out', emoji: '🚫' },
     ...(role === 'owner'
       ? [
+          { href: '/dashboard/reports', label: 'Sales', emoji: '📈' },
           { href: '/dashboard/menu', label: 'Menu', emoji: '📋' },
           { href: '/dashboard/tables', label: 'Tables & QR', emoji: '🔳' },
           { href: '/dashboard/staff', label: 'Staff', emoji: '👥' },
@@ -37,6 +39,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         </div>
         <NavLinks links={links} />
       </header>
+      <PlanBanner cafe={cafe} role={role} />
       <main className="mx-auto max-w-7xl px-4 py-6">{children}</main>
     </div>
   );

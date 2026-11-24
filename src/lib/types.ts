@@ -1,4 +1,5 @@
 export type Role = 'owner' | 'staff';
+export type Plan = 'trial' | 'monthly' | 'one_time' | 'comp';
 
 export interface Cafe {
   id: string;
@@ -10,6 +11,10 @@ export interface Cafe {
   currency: string;
   status: 'active' | 'suspended';
   links?: CafeLinks | null;
+  // Set by QRave (0006_plans.sql); missing until that migration runs.
+  plan?: Plan;
+  trial_ends_at?: string;
+  paid_until?: string | null;
 }
 
 export interface CafeLinks {

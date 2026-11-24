@@ -16,6 +16,7 @@ export default async function PreviewDashboardLayout({ children }: { children: R
   const links = [
     { href: `${base}/orders`, label: 'Orders', emoji: '🧾' },
     { href: `${base}/stock`, label: 'Sold out', emoji: '🚫' },
+    { href: `${base}/reports`, label: 'Sales', emoji: '📈' },
     { href: `${base}/menu`, label: 'Menu', emoji: '📋' },
     { href: `${base}/tables`, label: 'Tables & QR', emoji: '🔳' },
     { href: `${base}/staff`, label: 'Staff', emoji: '👥' },

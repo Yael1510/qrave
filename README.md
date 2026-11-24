@@ -28,6 +28,8 @@ NEXT_PUBLIC_SUPABASE_URL=https://xxxx.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=...        # anon / publishable key
 SUPABASE_SERVICE_ROLE_KEY=...            # service_role / secret key (server only, needed to add staff)
 NEXT_PUBLIC_SITE_URL=                    # your live address, used in QR codes (blank = current address)
+ADMIN_EMAILS=                            # who can open /admin (comma-separated emails)
+NEXT_PUBLIC_QRAVE_CONTACT_URL=           # where owners message you to subscribe, e.g. an m.me or wa.me link (optional)
 ```
 
 Never commit `.env.local`. It's already git-ignored.
@@ -43,7 +45,7 @@ Open http://localhost:3000. Sign up, create your cafe, add a category and some i
 
 ## Deploy (Vercel)
 1. Push this folder to a GitHub repository and import it in [Vercel](https://vercel.com).
-2. Add the same four environment variables in Vercel. Set `NEXT_PUBLIC_SITE_URL` to your domain, e.g. `https://qrave.ph`.
+2. Add the same environment variables in Vercel. Set `NEXT_PUBLIC_SITE_URL` to your domain, e.g. `https://qrave.ph`.
 3. In Supabase, update **Site URL** and **Redirect URLs** to the live domain.
 4. Print QR codes from the live site so they contain the live address.
 
@@ -54,12 +56,25 @@ Open http://localhost:3000. Sign up, create your cafe, add a category and some i
 - Orders are rate-limited per table. Photos upload only into the owner's own cafe folder.
 
 ## Tests
-`node scripts/test-db.mjs` runs the migration in an embedded Postgres and checks ordering, pricing, tabs and cross-cafe isolation, including moving a tab to another table and bar/kitchen stations (58 checks).
+`node scripts/test-db.mjs` runs the migration in an embedded Postgres and checks ordering, pricing, tabs and cross-cafe isolation, including moving a tab to another table, bar/kitchen stations, trials and plans, and sales reports.
+
+## Plans and the admin page
+Every new cafe starts on a **free 7-day trial**. After that it needs a plan, which you set on **/admin**:
+- **Paid 1 month**: monthly subscription. Each click adds a month after whatever they already have.
+- **One-time build**: paid once, never expires.
+- **Free**: for your own demo cafes or friends. Cafes that existed before plans start here.
+- **+7 trial days** and **Pause / Unpause** for anything else.
+
+When a trial or paid month runs out (or you pause a cafe), customers who scan a table see "QR ordering is paused" and can't order. The owner can still sign in, sees why, and nothing is deleted. Owners see a countdown during the trial. Only /admin (using the secret key) can change a plan; owners can't change their own.
+
+To open /admin, put your login email in `ADMIN_EMAILS` (in `.env.local` and in Vercel), then go to `/admin` while signed in. Everyone else gets a 404. Payments are collected by hand for now (GCash, Maya, bank).
+
+## Sales reports
+Owners get a **📈 Sales** tab: total sales, orders, average order and items sold (with the change against the period before, up to the same time of day), sales per day, busy hours, best sellers, and the bar vs kitchen split. Pick Today, Yesterday, the last 7 or 30 days, this month or last month. Days and hours are in Philippine time; cancelled orders don't count, unpaid tabs do. Staff can't see it.
 
 ## Next phase
-- PayMongo monthly subscriptions with a free trial (GCash, Maya, cards)
-- Sales reports (daily/weekly sales, best sellers, busy hours)
-- Super-admin page to manage all cafes
+- PayMongo to charge monthly subscriptions automatically (GCash, Maya, cards)
+- Export sales to a spreadsheet, and a daily summary message for the owner
 
 ## Continue on another computer
 Your keys are not in git (on purpose), so a fresh clone needs them again:
@@ -76,6 +91,6 @@ Deploys are automatic: every push to `main` on GitHub builds and goes live on Ve
 To deploy by hand from that computer instead: `npx vercel login`, then `npx vercel link --project qrave` (pick the existing project), then `npx vercel deploy --prod`.
 The live site's keys are already stored in Vercel, so deploys work without copying `.env.local`.
 
-Database changes live in `supabase/migrations/` (0001 → 0003 are applied to the live project; 0004, moving a tab to another table, and 0005, bar/kitchen stations, are not yet: paste each into the SQL Editor in order and click **Run**).
+Database changes live in `supabase/migrations/` (0001 → 0003 are applied to the live project; 0004, moving a tab to another table, 0005, bar/kitchen stations, 0006, trials and plans, and 0007, sales reports, are not yet: paste each into the SQL Editor in order and click **Run**).
 
 Stations: each menu category goes to the ☕ Bar or the 🍳 Kitchen (switch it in Menu). On the Orders screen, pick **All** (counter), **Bar** or **Kitchen** per device: the bar and kitchen see only their own items and move them on their own; an order is Ready once every station is done.
