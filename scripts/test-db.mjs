@@ -198,5 +198,75 @@ const so2 = await as(null, async () => (await q(`select place_order('kape-uno',$
 await as(S, () => q(`update orders set status = 'ready' where id = $1`, [so2.order_id]));
 ok((await q(`select bool_and(status = 'ready') r from order_items where order_id = $1`, [so2.order_id]))[0].r, 'setting a whole order ready directly also readies its lines');
 
+// --- plans (0006): free 7-day trial, then monthly or a one-time build ---
+const asQRave = async fn => { await db.exec(`reset role; set role service_role;`); try { return await fn(); } finally { await db.exec('reset role;'); } };
+const planA = (await q(`select plan, extract(epoch from trial_ends_at - now()) / 86400 days from cafes where id = $1`, [cafeA]))[0];
+ok(planA.plan === 'trial' && planA.days > 6.9 && planA.days <= 7, 'new cafes start on a 7-day free trial');
+await as(A, () => throws(() => q(`update cafes set plan = 'comp' where id = $1`, [cafeA]), 'Only QRave', 'owner cannot change their own plan'));
+await as(A, () => throws(() => q(`update cafes set trial_ends_at = now() + interval '1 year' where id = $1`, [cafeA]), 'Only QRave', 'owner cannot extend their own trial'));
+await as(A, () => throws(() => q(`update cafes set status = 'suspended' where id = $1`, [cafeA]), 'Only QRave', 'owner cannot change their status'));
+await as(A, async () => ok((await q(`update cafes set tagline = 'Hello' where id = $1 returning id`, [cafeA])).length === 1, 'owner can still edit their cafe details'));
+const anonSees = async () => as(null, async () => ({
+  cafe: (await q(`select id from cafes where id = $1`, [cafeA])).length,
+  items: (await q(`select id from items where cafe_id = $1`, [cafeA])).length,
+  table: (await q(`select * from resolve_table('kape-uno', $1)`, [token])).length,
+  closed: (await q(`select cafe_closed('kape-uno') c`))[0].c,
+}));
+let seen = await anonSees();
+ok(seen.cafe === 1 && seen.items > 0 && seen.table === 1 && !seen.closed, 'during the trial customers can open the menu');
+await asQRave(() => q(`update cafes set trial_ends_at = now() - interval '1 minute' where id = $1`, [cafeA]));
+seen = await anonSees();
+ok(seen.cafe === 0 && seen.items === 0 && seen.table === 0 && seen.closed, 'after the trial the menu and table link are closed to customers');
+await as(null, () => throws(() => q(`select place_order('kape-uno',$1,$2)`, [token, JSON.stringify([{ item_id: latte, qty: 1 }])]), '', 'customers cannot order once the trial is over'));
+await as(A, async () => ok((await q(`select id from cafes where id = $1`, [cafeA])).length === 1 && (await q(`select id from items where cafe_id = $1`, [cafeA])).length > 0, 'owner can still sign in and see their cafe after the trial'));
+ok((await as(null, async () => (await q(`select id from cafes where id = $1`, [cafeB])).length)) === 1, 'other cafes are not affected');
+await asQRave(() => q(`update cafes set plan = 'monthly', paid_until = now() + interval '1 month' where id = $1`, [cafeA]));
+ok((await anonSees()).table === 1, 'a paid month reopens the cafe');
+await asQRave(() => q(`update cafes set paid_until = now() - interval '1 day' where id = $1`, [cafeA]));
+ok((await anonSees()).table === 0, 'an unpaid month closes it again');
+await asQRave(() => q(`update cafes set plan = 'monthly', paid_until = null, trial_ends_at = now() + interval '2 days' where id = $1`, [cafeA]));
+ok((await anonSees()).table === 1, 'switching to monthly before the first payment keeps the trial days');
+await asQRave(() => q(`update cafes set plan = 'one_time', paid_until = null, trial_ends_at = now() - interval '9 days' where id = $1`, [cafeA]));
+ok((await anonSees()).table === 1, 'a one-time build never expires');
+await asQRave(() => q(`update cafes set status = 'suspended' where id = $1`, [cafeA]));
+ok((await anonSees()).closed, 'a suspended cafe is closed whatever its plan');
+await asQRave(() => q(`update cafes set status = 'active' where id = $1`, [cafeA]));
+ok(!(await q(`select cafe_closed('no-such-cafe') c`))[0].c, 'an unknown link is not reported as a paused cafe');
+
+// --- sales reports (0007) ---
+{
+  const tz = await q(`select id, total from orders where cafe_id = $1 and status <> 'cancelled' order by created_at limit 1`, [cafeA]);
+  // One order placed at 23:30 Manila time on Nov 20 (15:30 UTC): it belongs to Nov 20, hour 23, not Nov 20 UTC hour 15.
+  await q(`update orders set created_at = '2026-11-20 15:30:00+00' where id = $1`, [tz[0].id]);
+  const range = ['2026-11-19 16:00:00+00', '2026-11-21 16:00:00+00']; // Nov 20 and 21, Manila
+  const rep = await as(A, async () => (await q(`select sales_report($1,$2,$3) r`, [cafeA, ...range]))[0].r);
+  ok(rep.days.length === 2 && rep.days[0].day === '2026-11-20', 'report has one row per Philippine day in the range');
+  ok(Number(rep.days[0].sales) === Number(tz[0].total) && rep.days[0].orders === 1, 'a late-night order counts on its Philippine date');
+  ok(rep.hours.length === 24 && rep.hours[23].orders === 1 && rep.hours[15].orders === 0, 'busy hours use Philippine time');
+
+  const all = ['2000-01-01 00:00:00+00', '2100-01-01 00:00:00+00'];
+  await throws(() => as(A, () => q(`select sales_report($1,$2,$3)`, [cafeA, ...all])), 'BAD_RANGE', 'a huge date range is rejected');
+  const from = new Date(Date.now() - 300 * 86400000).toISOString(), to = new Date(Date.now() + 86400000).toISOString();
+  const full = await as(A, async () => (await q(`select sales_report($1,$2,$3) r`, [cafeA, from, to]))[0].r);
+  const want = (await q(`select coalesce(sum(total),0) s, count(*) n from orders where cafe_id = $1 and status <> 'cancelled'`, [cafeA]))[0];
+  ok(Number(full.sales) === Number(want.s) && full.orders === Number(want.n), 'total sales and orders match, cancelled orders left out');
+  const lineSum = full.best.reduce((s, b) => s + Number(b.sales), 0);
+  ok(full.best[0].name === 'Latte' && full.best.every((b, i) => i === 0 || Number(full.best[i - 1].qty) >= Number(b.qty)), 'best sellers are ranked by quantity');
+  ok(Math.abs(lineSum - Number(full.sales)) < 0.01, 'best-seller sales add up to total sales (with add-ons)');
+  ok(full.stations.some(s => s.station === 'bar') && full.stations.some(s => s.station === 'kitchen'), 'report splits bar and kitchen');
+  await throws(() => as(S, () => q(`select sales_report($1,$2,$3)`, [cafeA, from, to])), 'Not allowed', 'staff cannot open sales reports');
+  await throws(() => as(B, () => q(`select sales_report($1,$2,$3)`, [cafeA, from, to])), 'Not allowed', 'other owners cannot see cafe A sales');
+  await throws(() => as(null, () => q(`select sales_report($1,$2,$3)`, [cafeA, from, to])), 'permission denied', 'customers cannot see sales');
+}
+
+{
+  // Previous-period comparison stops at the same elapsed time.
+  const t0 = new Date(Date.now() - 3600e3).toISOString(), t1 = new Date(Date.now() + 23 * 3600e3).toISOString();
+  const o = (await q(`select id from orders where cafe_id = $1 and status <> 'cancelled' order by created_at desc limit 2`, [cafeA])).map(r => r.id);
+  await q(`update orders set created_at = now() - interval '24 hours 30 minutes' where id = $1`, [o[0]]); // yesterday, before this time of day
+  await q(`update orders set created_at = now() - interval '22 hours' where id = $1`, [o[1]]);            // yesterday, later in the day
+  const rr = await as(A, async () => (await q(`select sales_report($1,$2,$3) r`, [cafeA, t0, t1]))[0].r);
+  ok(rr.prev_orders === 1, 'today is compared with yesterday up to the same time, not the whole day');
+}
 console.log(failures ? `\n${failures} check(s) FAILED` : '\nAll database checks passed');
 process.exit(failures ? 1 : 0);
